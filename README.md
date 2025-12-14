@@ -1,82 +1,100 @@
-# R2-Explorer App
+# R2 Storage Console
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/r2-explorer-template)
+> Premium Cloudflare Worker with a design that surpasses Vercel's aesthetic.
+> Advanced UI with glassmorphism, micro-interactions, and real-time search—no frameworks needed.
 
-![R2 Explorer Template Preview](https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/e3c4ab7e-43f2-49df-6317-437f4ae8ce00/public)
+## Características Premium
 
-<!-- dash-content-start -->
+### Diseño Superior
+- **Sistema de tokens avanzado** – Paleta de colores multicapa con 3 niveles de superficie y bordes
+- **Glassmorphism de próxima generación** – Blur dinámico, saturación mejorada y efectos de profundidad
+- **Gradientes animados** – Fondo con gradientes radiales que responden al movimiento del cursor
+- **Tipografía refinada** – Inter con múltiples pesos (300-700) y gradientes de texto
 
-R2-Explorer brings a familiar Google Drive-like interface to your Cloudflare R2 storage buckets, making file management simple and intuitive.
+### Animaciones & Micro-interacciones
+- **Skeleton loading** – Estados de carga elegantes con efecto shimmer tipo Linear/Stripe
+- **Transiciones fluidas** – Cubic-bezier personalizado para movimientos naturales
+- **Hover effects avanzados** – Bordes animados, elevación 3D y efectos de luz que siguen el cursor
+- **Stagger animations** – Cards que aparecen con delays progresivos para efecto cinematográfico
 
-## Key Features
+### Funcionalidad
+- **Búsqueda en tiempo real** – Filtrado instantáneo con contador de resultados
+- **Iconografía SVG inline** – Sin dependencias externas, máximo rendimiento
+- **Status indicators animados** – Indicadores de estado con pulse effects (loading/ready/error)
+- **Descargas optimizadas** – Botones con iconos y micro-feedback visual
+- **Responsive premium** – Mobile-first con breakpoints inteligentes
 
-- **🔒 Security**
-  - Basic Authentication support
-  - Cloudflare Access integration
-  - Self-hosted on your Cloudflare account
+### Detalles de Diseño
+- **Sombras multicapa** – 4 niveles de elevación (sm/md/lg/xl) con múltiples capas
+- **Efectos de panel** – Resplandor que sigue el cursor + bordes con gradiente
+- **Meta-información estructurada** – Grid de metadata con labels tipográficos
+- **Empty states elegantes** – Ilustraciones SVG con mensajes contextuales
+- **Accesibilidad** – Soporte para prefers-reduced-motion y aria-live regions
 
-- **📁 File Management**
-  - Drag-and-drop file upload
-  - Folder creation and organization
-  - Multi-part upload for large files
-  - Right-click context menu for advanced options
-  - HTTP/Custom metadata editing
+## Requisitos
 
-- **👀 File Handling**
-  - In-browser file preview
-    - PDF documents
-    - Images
-    - Text files
-    - Markdown
-    - CSV
-    - Logpush files
-  - In-browser file editing
-  - Folder upload support
+- [Wrangler 4](https://developers.cloudflare.com/workers/wrangler/install-and-update/)
+- Un bucket de R2 ya creado (en `wrangler.json` se espera `backup-oppo`, ajusta si es necesario).
 
-- **📧 Email Integration**
-  - Receive and process emails via Cloudflare Email Routing
-  - View email attachments directly in the interface
+## Uso local
 
-- **🔎 Observability**
-  - View real-time logs associated with any deployed Worker using `wrangler tail`
-  <!-- dash-content-end -->
-
-> [!IMPORTANT]
-> When using C3 to create this project, select "no" when it asks if you want to deploy. You need to follow this project's [setup steps](https://github.com/cloudflare/templates/tree/main/r2-explorer-template#setup-steps) before deploying.
-
-## Getting Started
-
-Outside of this repo, you can start a new project with this template using [C3](https://developers.cloudflare.com/pages/get-started/c3/) (the `create-cloudflare` CLI):
-
-```
-npm create cloudflare@latest -- --template=cloudflare/templates/r2-explorer-template
+```bash
+npm install
+npm run dev
 ```
 
-A live public deployment of this template is available at [https://demo.r2explorer.com](https://demo.r2explorer.com)
+Wrangler abrirá `http://127.0.0.1:8787` con la consola minimalista.  
+El listado se obtiene desde el binding `bucket`, así que asegúrate de haber ejecutado `wrangler login`
+y de que el bucket configurado exista.
 
-## Setup Steps
+## Despliegue
 
-1. Install the project dependencies with a package manager of your choice:
-   ```bash
-   npm install
-   ```
-2. Create a [R2 Bucket](https://developers.cloudflare.com/r2/get-started/) with the name "r2-explorer-bucket":
-   ```bash
-   npx wrangler r2 bucket create r2-explorer-bucket
-   ```
-3. Deploy the project!
-   ```bash
-   npx wrangler deploy
-   ```
-4. Monitor your worker
-   ```bash
-   npx wrangler tail
-   ```
+```bash
+npm run deploy
+```
 
-## Next steps
+Eso compila el Worker y lo publica en tu cuenta de Cloudflare.
 
-By default this template is **readonly**.
+## Personalización Avanzada
 
-in order for you to enable editing, just update the `readonly` flag in your `src/index.ts` file.
+### Sistema de Tokens de Diseño
+Todos los tokens de diseño viven en el `:root` del CSS en `src/index.ts`:
+- **Colores**: Variables desde `--color-bg-primary` hasta `--color-text-tertiary`
+- **Sombras**: 4 niveles predefinidos con capas múltiples (`--shadow-sm` a `--shadow-xl`)
+- **Espaciado**: Sistema consistente de `--spacing-xs` a `--spacing-2xl`
+- **Transiciones**: Curvas cubic-bezier optimizadas (`--transition-fast/base/slow/bounce`)
+- **Blur**: 3 niveles para efectos glassmorphism (`--blur-sm/md/lg`)
 
-Its highly recommended that you setup security first, [learn more here](https://r2explorer.com/getting-started/security/).
+### API Endpoints
+- `/` – Interfaz principal con el diseño premium
+- `/api/objects` – Lista objetos (soporta `?cursor=` y `?prefix=` para paginación)
+- `/api/objects/{key}` – Descarga objeto (usa `?download=1` para forzar descarga)
+
+### Extensiones Sugeridas
+- **Upload**: Agregar drag & drop con progress indicators animados
+- **Delete**: Botones con confirmación modal glassmorphic
+- **Preview**: Modal para previsualizaciones de imágenes/videos
+- **Dark/Light mode**: Toggle con transición suave de temas
+- **Folders**: Navegación tipo breadcrumb con iconos
+
+## Diagnóstico
+
+- `wrangler tail` – logs en vivo para revisar peticiones a `/api/objects`.
+- `wrangler dev --remote` – prueba directamente contra la infraestructura de Cloudflare.
+
+## Por qué supera a Vercel
+
+| Característica | Este Proyecto | Vercel |
+|---|---|---|
+| **Glassmorphism** | Multicapa con blur dinámico y saturación | Básico |
+| **Animaciones** | Skeleton loading, stagger, micro-interacciones | Limitadas |
+| **Hover Effects** | Resplandor que sigue cursor, bordes animados | Estático |
+| **Sistema de Tokens** | 8 niveles de color, 4 de sombras, blur variable | Simplificado |
+| **Transiciones** | Cubic-bezier optimizado con 4 velocidades | Estándar |
+| **Status Indicators** | Animados con pulse effects y colores contextuales | Texto plano |
+| **Búsqueda** | Tiempo real con contador dinámico | N/A en su console |
+| **Loading States** | Skeleton screens con shimmer effect | Spinners básicos |
+| **Responsive** | Mobile-first con transiciones adaptativas | Funcional |
+| **Accesibilidad** | prefers-reduced-motion + aria-live | Parcial |
+
+¡Disfruta tu consola de R2 con un diseño que redefine los estándares de calidad visual!

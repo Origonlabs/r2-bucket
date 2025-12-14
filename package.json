@@ -1,6 +1,6 @@
 {
 	"name": "r2-bucket",
-	"description": "A Google Drive Interface for your Cloudflare R2 Buckets!",
+	"description": "Minimal Vercel-inspired console for Cloudflare R2.",
 	"private": true,
 	"cloudflare": {
 		"label": "R2-Explorer App",
@@ -16,9 +16,7 @@
 		"preview_image_url": "https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/739b4cf5-9f2c-47ad-0e82-99c5993d3e00/preview",
 		"publish": true
 	},
-	"dependencies": {
-		"r2-explorer": "1.1.5"
-	},
+	"dependencies": {},
 	"devDependencies": {
 		"typescript": "5.8.3",
 		"wrangler": "4.21.x"
