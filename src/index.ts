@@ -119,6 +119,7 @@ const getShell = (): string => {
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 		<style>
 			:root {
 				color-scheme: dark;
@@ -811,6 +812,138 @@ const getShell = (): string => {
 				color: var(--color-text-tertiary);
 			}
 
+			/* Progress Modal */
+			.modal-overlay {
+				position: fixed;
+				inset: 0;
+				background: rgba(0, 0, 0, 0.8);
+				backdrop-filter: blur(8px);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 1000;
+				animation: fade-in-up var(--transition-base) ease-out;
+			}
+
+			.modal {
+				width: min(480px, calc(100% - 2rem));
+				background: var(--gradient-panel), var(--color-surface-1);
+				border: 1px solid var(--color-border-default);
+				border-radius: var(--radius-xl);
+				padding: var(--spacing-xl);
+				box-shadow: var(--shadow-xl);
+				animation: scale-in var(--transition-base) ease-out;
+			}
+
+			.modal-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin-bottom: var(--spacing-lg);
+			}
+
+			.modal-title {
+				font-size: 1.25rem;
+				font-weight: 600;
+				color: var(--color-text-primary);
+			}
+
+			.modal-close {
+				width: 32px;
+				height: 32px;
+				padding: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background: var(--color-surface-2);
+				border: 1px solid var(--color-border-subtle);
+				border-radius: var(--radius-sm);
+				color: var(--color-text-secondary);
+				cursor: pointer;
+				transition: all var(--transition-fast);
+			}
+
+			.modal-close:hover {
+				background: var(--color-surface-3);
+				color: var(--color-text-primary);
+			}
+
+			.modal-close svg {
+				width: 16px;
+				height: 16px;
+			}
+
+			.progress-info {
+				margin-bottom: var(--spacing-md);
+			}
+
+			.progress-label {
+				font-size: 0.875rem;
+				color: var(--color-text-secondary);
+				margin-bottom: var(--spacing-xs);
+			}
+
+			.progress-stats {
+				font-size: 0.75rem;
+				color: var(--color-text-tertiary);
+				margin-top: var(--spacing-xs);
+			}
+
+			.progress-bar-container {
+				width: 100%;
+				height: 8px;
+				background: var(--color-surface-2);
+				border-radius: 999px;
+				overflow: hidden;
+				position: relative;
+			}
+
+			.progress-bar {
+				height: 100%;
+				background: linear-gradient(90deg, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8));
+				border-radius: 999px;
+				transition: width var(--transition-base);
+				position: relative;
+				overflow: hidden;
+			}
+
+			.progress-bar::after {
+				content: "";
+				position: absolute;
+				inset: 0;
+				background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+				animation: shimmer 1.5s infinite;
+			}
+
+			.download-folder-btn {
+				margin-top: var(--spacing-sm);
+				width: 100%;
+				padding: var(--spacing-sm) var(--spacing-md);
+				background: rgba(99, 102, 241, 0.1);
+				border: 1px solid rgba(99, 102, 241, 0.2);
+				color: rgba(99, 102, 241, 0.9);
+				font-size: 0.8125rem;
+				font-weight: 600;
+				border-radius: var(--radius-sm);
+				cursor: pointer;
+				transition: all var(--transition-fast);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: var(--spacing-xs);
+			}
+
+			.download-folder-btn:hover {
+				background: rgba(99, 102, 241, 0.15);
+				border-color: rgba(99, 102, 241, 0.3);
+				transform: translateY(-1px);
+			}
+
+			.download-folder-btn svg {
+				width: 14px;
+				height: 14px;
+			}
+
 			@media (max-width: 768px) {
 				.app-shell {
 					padding: var(--spacing-lg) 0;
@@ -932,6 +1065,28 @@ const getShell = (): string => {
 				</div>
 			</section>
 		</main>
+
+		<!-- Progress Modal -->
+		<div id="progress-modal" class="modal-overlay" style="display: none;">
+			<div class="modal">
+				<div class="modal-header">
+					<h2 class="modal-title">Downloading Folder</h2>
+					<button class="modal-close" id="modal-close">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
+					</button>
+				</div>
+				<div class="progress-info">
+					<div class="progress-label" id="progress-label">Preparing download...</div>
+					<div class="progress-bar-container">
+						<div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+					</div>
+					<div class="progress-stats" id="progress-stats">0 / 0 files</div>
+				</div>
+			</div>
+		</div>
 
 		<script>
 			const grid = document.getElementById("grid");
@@ -1086,10 +1241,28 @@ const getShell = (): string => {
 								<div class="meta-value">—</div>
 							</div>
 						</div>
+						<button class="download-folder-btn" data-folder="\${folderName}">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+								<polyline points="7 10 12 15 17 10"></polyline>
+								<line x1="12" y1="15" x2="12" y2="3"></line>
+							</svg>
+							Download Folder
+						</button>
 					\`;
 
-					card.addEventListener("click", () => {
-						navigateToFolder(currentPrefix + folderName);
+					// Navigate to folder on card click (but not on button click)
+					card.addEventListener("click", (e) => {
+						if (!e.target.closest('.download-folder-btn')) {
+							navigateToFolder(currentPrefix + folderName);
+						}
+					});
+
+					// Download folder on button click
+					const downloadBtn = card.querySelector('.download-folder-btn');
+					downloadBtn.addEventListener("click", (e) => {
+						e.stopPropagation();
+						downloadFolder(currentPrefix + folderName);
 					});
 
 					grid.append(card);
@@ -1238,6 +1411,139 @@ const getShell = (): string => {
 			searchInput.addEventListener("input", (e) => {
 				filterObjects(e.target.value);
 			});
+
+			// Download folder functionality
+			const progressModal = document.getElementById("progress-modal");
+			const progressBar = document.getElementById("progress-bar");
+			const progressLabel = document.getElementById("progress-label");
+			const progressStats = document.getElementById("progress-stats");
+			const modalClose = document.getElementById("modal-close");
+
+			let downloadAborted = false;
+
+			modalClose.addEventListener("click", () => {
+				downloadAborted = true;
+				progressModal.style.display = "none";
+			});
+
+			const downloadFolder = async (folderPrefix) => {
+				downloadAborted = false;
+				progressModal.style.display = "flex";
+				progressBar.style.width = "0%";
+				progressLabel.textContent = "Fetching file list...";
+				progressStats.textContent = "Please wait...";
+
+				try {
+					// Get all files in the folder recursively
+					const allFiles = await getAllFilesInFolder(folderPrefix);
+
+					if (downloadAborted) return;
+
+					if (allFiles.length === 0) {
+						progressLabel.textContent = "Folder is empty";
+						progressStats.textContent = "No files to download";
+						setTimeout(() => {
+							progressModal.style.display = "none";
+						}, 2000);
+						return;
+					}
+
+					progressLabel.textContent = \`Downloading \${allFiles.length} files...\`;
+					progressStats.textContent = \`0 / \${allFiles.length} files\`;
+
+					// Create ZIP
+					const zip = new JSZip();
+					const folderName = folderPrefix.split("/").filter(Boolean).pop() || "bucket";
+
+					// Download and add files to ZIP
+					for (let i = 0; i < allFiles.length; i++) {
+						if (downloadAborted) return;
+
+						const file = allFiles[i];
+						progressLabel.textContent = \`Downloading: \${file.key}\`;
+						progressStats.textContent = \`\${i + 1} / \${allFiles.length} files\`;
+						progressBar.style.width = \`\${((i + 1) / allFiles.length) * 100}%\`;
+
+						try {
+							const response = await fetch(\`/api/objects/\${encodeURIComponent(file.key)}\`);
+							if (!response.ok) throw new Error(\`Failed to download \${file.key}\`);
+
+							const blob = await response.blob();
+							const relativePath = file.key.replace(folderPrefix, "");
+							zip.file(relativePath, blob);
+						} catch (error) {
+							console.error(\`Error downloading \${file.key}:\`, error);
+						}
+					}
+
+					if (downloadAborted) return;
+
+					// Generate and download ZIP
+					progressLabel.textContent = "Creating ZIP file...";
+					progressStats.textContent = "Almost done...";
+
+					const zipBlob = await zip.generateAsync({ type: "blob" }, (metadata) => {
+						const percent = metadata.percent.toFixed(0);
+						progressBar.style.width = \`\${percent}%\`;
+					});
+
+					if (downloadAborted) return;
+
+					// Trigger download
+					const url = URL.createObjectURL(zipBlob);
+					const a = document.createElement("a");
+					a.href = url;
+					a.download = \`\${folderName}.zip\`;
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+
+					progressLabel.textContent = "Download complete!";
+					progressStats.textContent = \`\${allFiles.length} files downloaded\`;
+					progressBar.style.width = "100%";
+
+					setTimeout(() => {
+						progressModal.style.display = "none";
+					}, 2000);
+				} catch (error) {
+					console.error("Error downloading folder:", error);
+					progressLabel.textContent = "Download failed";
+					progressStats.textContent = error.message || "An error occurred";
+					setTimeout(() => {
+						progressModal.style.display = "none";
+					}, 3000);
+				}
+			};
+
+			const getAllFilesInFolder = async (prefix) => {
+				const files = [];
+				let cursor = undefined;
+				let truncated = true;
+
+				while (truncated) {
+					const url = new URL("/api/objects", window.location.href);
+					url.searchParams.set("prefix", prefix);
+					if (cursor) {
+						url.searchParams.set("cursor", cursor);
+					}
+
+					const response = await fetch(url);
+					if (!response.ok) throw new Error("Failed to fetch file list");
+
+					const data = await response.json();
+
+					// Add all objects (files only, not folders)
+					if (data.objects) {
+						files.push(...data.objects);
+					}
+
+					cursor = data.cursor;
+					truncated = data.truncated;
+				}
+
+				return files;
+			};
 
 			// Mouse tracking for panel hover effect
 			document.querySelectorAll('.panel').forEach(panel => {

@@ -19,6 +19,7 @@
 
 ### Funcionalidad
 - **Navegación por carpetas** – Sistema de breadcrumbs elegante para explorar jerarquías
+- **Descarga de carpetas completas** – ZIP automático con modal de progreso en tiempo real
 - **Detección automática de carpetas** – Diferencia visual entre carpetas y archivos
 - **Búsqueda en tiempo real** – Filtrado instantáneo con contador de resultados
 - **Iconografía SVG inline** – Sin dependencias externas, máximo rendimiento
@@ -82,6 +83,18 @@ El sistema de carpetas funciona automáticamente:
 - **Búsqueda contextual** – Filtra dentro de la carpeta actual
 - **Navegación clicable** – Click en carpeta para entrar, click en breadcrumb para volver
 
+### Descarga de Carpetas
+
+Descarga carpetas completas como archivos ZIP con una experiencia premium:
+- **Botón "Download Folder"** – Visible en cada card de carpeta
+- **Modal de progreso** – Muestra barra de progreso animada con efecto shimmer
+- **Descarga recursiva** – Incluye todos los archivos y subcarpetas automáticamente
+- **Contador en tiempo real** – "X / Y files" durante la descarga
+- **Compresión ZIP** – Usa JSZip para crear archivos .zip del lado del cliente
+- **Cancelación** – Botón X para abortar la descarga en cualquier momento
+- **Manejo de errores** – Mensajes claros si algo falla
+- **Sin límites** – Maneja carpetas con miles de archivos usando paginación automática
+
 ### Extensiones Sugeridas
 - **Upload**: Agregar drag & drop con progress indicators animados
 - **Delete**: Botones con confirmación modal glassmorphic
@@ -106,6 +119,7 @@ El sistema de carpetas funciona automáticamente:
 | **Status Indicators** | Animados con pulse effects y colores contextuales | Texto plano |
 | **Búsqueda** | Tiempo real con contador dinámico | N/A en su console |
 | **Navegación** | Breadcrumbs + detección de carpetas | Básica |
+| **Descarga Carpetas** | ZIP automático + modal de progreso | No disponible |
 | **Loading States** | Skeleton screens con shimmer effect | Spinners básicos |
 | **Responsive** | Mobile-first con transiciones adaptativas | Funcional |
 | **Accesibilidad** | prefers-reduced-motion + aria-live | Parcial |
