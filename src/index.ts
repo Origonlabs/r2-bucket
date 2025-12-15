@@ -40,6 +40,7 @@ const listObjects = async (env: Env, url: URL): Promise<Response> => {
 		limit: 1000,
 		prefix,
 		cursor,
+		delimiter: "/",
 		include: ["httpMetadata", "customMetadata"],
 	});
 
@@ -56,6 +57,7 @@ const listObjects = async (env: Env, url: URL): Promise<Response> => {
 			etag: object.httpEtag ?? null,
 			metadata: object.customMetadata ?? {},
 		})),
+		delimitedPrefixes: result.delimitedPrefixes ?? [],
 		cursor: result.truncated ? result.cursor : null,
 		truncated: result.truncated,
 	});
@@ -423,6 +425,57 @@ const getShell = (): string => {
 				flex-shrink: 0;
 			}
 
+			.breadcrumbs {
+				display: flex;
+				align-items: center;
+				gap: var(--spacing-xs);
+				margin-bottom: var(--spacing-lg);
+				padding: var(--spacing-sm) var(--spacing-md);
+				background: var(--color-surface-1);
+				border: 1px solid var(--color-border-subtle);
+				border-radius: var(--radius-lg);
+				overflow-x: auto;
+				flex-wrap: wrap;
+			}
+
+			.breadcrumb-item {
+				display: inline-flex;
+				align-items: center;
+				gap: var(--spacing-xs);
+				padding: var(--spacing-xs) var(--spacing-sm);
+				background: transparent;
+				border: none;
+				border-radius: var(--radius-sm);
+				color: var(--color-text-secondary);
+				font-size: 0.875rem;
+				font-weight: 500;
+				cursor: pointer;
+				transition: all var(--transition-fast);
+				white-space: nowrap;
+			}
+
+			.breadcrumb-item svg {
+				width: 16px;
+				height: 16px;
+			}
+
+			.breadcrumb-item:hover {
+				background: var(--color-surface-2);
+				color: var(--color-text-primary);
+			}
+
+			.breadcrumb-item:last-child {
+				color: var(--color-text-primary);
+				font-weight: 600;
+				pointer-events: none;
+			}
+
+			.breadcrumb-separator {
+				color: var(--color-text-tertiary);
+				font-size: 0.875rem;
+				user-select: none;
+			}
+
 			.search-container {
 				position: relative;
 				margin-bottom: var(--spacing-lg);
@@ -600,6 +653,22 @@ const getShell = (): string => {
 
 			.object-card:active {
 				transform: translateY(0);
+			}
+
+			.object-card.folder-card {
+				border-color: rgba(99, 102, 241, 0.15);
+				background: var(--gradient-panel), rgba(99, 102, 241, 0.03);
+			}
+
+			.object-card.folder-card:hover {
+				border-color: rgba(99, 102, 241, 0.3);
+				background: var(--gradient-panel), rgba(99, 102, 241, 0.06);
+			}
+
+			.object-card.folder-card .file-icon {
+				background: rgba(99, 102, 241, 0.1);
+				border-color: rgba(99, 102, 241, 0.2);
+				color: rgba(99, 102, 241, 0.9);
 			}
 
 			.card-header {
@@ -872,14 +941,23 @@ const getShell = (): string => {
 			const refreshButton = document.getElementById("refresh");
 			const searchInput = document.getElementById("search");
 			const skeletonLoader = document.getElementById("skeleton-loader");
+			const breadcrumbsContainer = document.getElementById("breadcrumbs");
 
 			let allObjects = [];
+			let allFolders = [];
 			let filteredObjects = [];
+			let currentPrefix = "";
 
 			const getFileIcon = () => \`
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
 					<polyline points="13 2 13 9 20 9"></polyline>
+				</svg>
+			\`;
+
+			const getFolderIcon = () => \`
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
 				</svg>
 			\`;
 
@@ -911,10 +989,70 @@ const getShell = (): string => {
 				return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 			};
 
-			const renderObjects = (objects) => {
+			const renderBreadcrumbs = (prefix) => {
+				if (!prefix) {
+					breadcrumbsContainer.style.display = "none";
+					return;
+				}
+
+				breadcrumbsContainer.style.display = "flex";
+				breadcrumbsContainer.innerHTML = "";
+
+				const parts = prefix.split("/").filter(Boolean);
+				let currentPath = "";
+
+				// Root button
+				const rootBtn = document.createElement("button");
+				rootBtn.className = "breadcrumb-item";
+				rootBtn.dataset.path = "";
+				rootBtn.innerHTML = \`
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+						<polyline points="9 22 9 12 15 12 15 22"></polyline>
+					</svg>
+					Root
+				\`;
+				rootBtn.addEventListener("click", () => navigateToFolder(""));
+				breadcrumbsContainer.appendChild(rootBtn);
+
+				// Add separator
+				const sep1 = document.createElement("span");
+				sep1.className = "breadcrumb-separator";
+				sep1.textContent = "/";
+				breadcrumbsContainer.appendChild(sep1);
+
+				// Add path parts
+				parts.forEach((part, index) => {
+					currentPath += part + "/";
+					const btn = document.createElement("button");
+					btn.className = "breadcrumb-item";
+					btn.dataset.path = currentPath;
+					btn.textContent = part;
+					btn.addEventListener("click", () => navigateToFolder(currentPath));
+					breadcrumbsContainer.appendChild(btn);
+
+					if (index < parts.length - 1) {
+						const sep = document.createElement("span");
+						sep.className = "breadcrumb-separator";
+						sep.textContent = "/";
+						breadcrumbsContainer.appendChild(sep);
+					}
+				});
+			};
+
+			const navigateToFolder = (prefix) => {
+				currentPrefix = prefix;
+				searchInput.value = "";
+				renderBreadcrumbs(prefix);
+				loadObjects();
+			};
+
+			const renderObjects = (objects, folders = []) => {
 				grid.innerHTML = "";
 
-				if (!objects.length) {
+				const totalItems = folders.length + objects.length;
+
+				if (!totalItems) {
 					grid.style.display = "none";
 					emptyState.hidden = false;
 					return;
@@ -923,17 +1061,55 @@ const getShell = (): string => {
 				grid.style.display = "grid";
 				emptyState.hidden = true;
 
-				objects.forEach((object, index) => {
+				let index = 0;
+
+				// Render folders first
+				folders.forEach((folderName) => {
+					const card = document.createElement("article");
+					card.className = "object-card folder-card";
+					card.style.animationDelay = \`\${index * 30}ms\`;
+
+					card.innerHTML = \`
+						<div class="card-header">
+							<div class="file-icon">
+								\${getFolderIcon()}
+							</div>
+							<h3 title="\${folderName}">\${folderName.replace(/\\/$/g, '')}</h3>
+						</div>
+						<div class="meta-grid">
+							<div class="meta-item">
+								<div class="meta-label">Type</div>
+								<div class="meta-value">Folder</div>
+							</div>
+							<div class="meta-item">
+								<div class="meta-label">Items</div>
+								<div class="meta-value">—</div>
+							</div>
+						</div>
+					\`;
+
+					card.addEventListener("click", () => {
+						navigateToFolder(currentPrefix + folderName);
+					});
+
+					grid.append(card);
+					index++;
+				});
+
+				// Render files
+				objects.forEach((object) => {
 					const card = document.createElement("article");
 					card.className = "object-card";
 					card.style.animationDelay = \`\${index * 30}ms\`;
+
+					const displayName = object.key.replace(currentPrefix, "");
 
 					card.innerHTML = \`
 						<div class="card-header">
 							<div class="file-icon">
 								\${getFileIcon()}
 							</div>
-							<h3 title="\${object.key}">\${object.key}</h3>
+							<h3 title="\${object.key}">\${displayName}</h3>
 						</div>
 						<div class="meta-grid">
 							<div class="meta-item">
@@ -961,32 +1137,43 @@ const getShell = (): string => {
 					\`;
 
 					grid.append(card);
+					index++;
 				});
 			};
 
 			const filterObjects = (query) => {
 				const lowerQuery = query.toLowerCase().trim();
 
+				let filteredFolders = allFolders;
+
 				if (!lowerQuery) {
 					filteredObjects = [...allObjects];
 				} else {
+					filteredFolders = allFolders.filter(folder =>
+						folder.toLowerCase().includes(lowerQuery)
+					);
 					filteredObjects = allObjects.filter(obj =>
-						obj.key.toLowerCase().includes(lowerQuery)
+						obj.key.replace(currentPrefix, "").toLowerCase().includes(lowerQuery)
 					);
 				}
 
-				renderObjects(filteredObjects);
+				renderObjects(filteredObjects, filteredFolders);
 				updateStatus();
 			};
 
 			const updateStatus = () => {
-				const count = filteredObjects.length;
-				const total = allObjects.length;
+				const objectCount = filteredObjects.length;
+				const folderCount = allFolders.length;
+				const totalCount = objectCount + folderCount;
+				const total = allObjects.length + allFolders.length;
 
-				if (searchInput.value.trim() && count !== total) {
-					statusText.textContent = \`\${count} of \${total} objects\`;
+				if (searchInput.value.trim() && totalCount !== total) {
+					statusText.textContent = \`\${totalCount} of \${total} items\`;
 				} else {
-					statusText.textContent = \`\${total} object\${total !== 1 ? 's' : ''}\`;
+					const parts = [];
+					if (folderCount > 0) parts.push(\`\${folderCount} folder\${folderCount !== 1 ? 's' : ''}\`);
+					if (objectCount > 0) parts.push(\`\${objectCount} file\${objectCount !== 1 ? 's' : ''}\`);
+					statusText.textContent = parts.length ? parts.join(", ") : "No items";
 				}
 			};
 
@@ -999,18 +1186,36 @@ const getShell = (): string => {
 				statusText.textContent = "Syncing...";
 
 				try {
-					const response = await fetch("/api/objects");
+					const url = new URL("/api/objects", window.location.href);
+					if (currentPrefix) {
+						url.searchParams.set("prefix", currentPrefix);
+					}
+
+					const response = await fetch(url);
 					if (!response.ok) {
 						throw new Error("Failed to fetch objects");
 					}
 
 					const data = await response.json();
-					allObjects = data.objects ?? [];
+
+					// Get folders from delimitedPrefixes
+					allFolders = (data.delimitedPrefixes ?? []).map(prefix => {
+						// Remove the currentPrefix to get just the folder name
+						return prefix.replace(currentPrefix, "");
+					});
+
+					// Filter objects to only show those in the current directory
+					allObjects = (data.objects ?? []).filter(obj => {
+						const relativePath = obj.key.replace(currentPrefix, "");
+						// Only include files in current directory (no nested folders)
+						return !relativePath.includes("/");
+					});
+
 					filteredObjects = [...allObjects];
 
 					setTimeout(() => {
 						skeletonLoader.style.display = "none";
-						renderObjects(filteredObjects);
+						renderObjects(filteredObjects, allFolders);
 						status.dataset.state = "ready";
 						updateStatus();
 					}, 300);
@@ -1025,6 +1230,8 @@ const getShell = (): string => {
 
 			refreshButton.addEventListener("click", () => {
 				searchInput.value = "";
+				currentPrefix = "";
+				renderBreadcrumbs("");
 				loadObjects();
 			});
 

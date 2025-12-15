@@ -18,6 +18,8 @@
 - **Stagger animations** – Cards que aparecen con delays progresivos para efecto cinematográfico
 
 ### Funcionalidad
+- **Navegación por carpetas** – Sistema de breadcrumbs elegante para explorar jerarquías
+- **Detección automática de carpetas** – Diferencia visual entre carpetas y archivos
 - **Búsqueda en tiempo real** – Filtrado instantáneo con contador de resultados
 - **Iconografía SVG inline** – Sin dependencias externas, máximo rendimiento
 - **Status indicators animados** – Indicadores de estado con pulse effects (loading/ready/error)
@@ -70,12 +72,22 @@ Todos los tokens de diseño viven en el `:root` del CSS en `src/index.ts`:
 - `/api/objects` – Lista objetos (soporta `?cursor=` y `?prefix=` para paginación)
 - `/api/objects/{key}` – Descarga objeto (usa `?download=1` para forzar descarga)
 
+### Navegación por Carpetas
+
+El sistema de carpetas funciona automáticamente:
+- **Breadcrumbs dinámicos** – Aparecen al navegar en carpetas, con icono de "Home"
+- **Cards de carpetas** – Estilo diferenciado con tono índigo y icono de carpeta
+- **Separación visual** – Carpetas siempre aparecen primero, luego archivos
+- **Contador inteligente** – Muestra "X folders, Y files" en el status
+- **Búsqueda contextual** – Filtra dentro de la carpeta actual
+- **Navegación clicable** – Click en carpeta para entrar, click en breadcrumb para volver
+
 ### Extensiones Sugeridas
 - **Upload**: Agregar drag & drop con progress indicators animados
 - **Delete**: Botones con confirmación modal glassmorphic
 - **Preview**: Modal para previsualizaciones de imágenes/videos
 - **Dark/Light mode**: Toggle con transición suave de temas
-- **Folders**: Navegación tipo breadcrumb con iconos
+- **Bulk operations**: Selección múltiple con checkboxes
 
 ## Diagnóstico
 
@@ -93,6 +105,7 @@ Todos los tokens de diseño viven en el `:root` del CSS en `src/index.ts`:
 | **Transiciones** | Cubic-bezier optimizado con 4 velocidades | Estándar |
 | **Status Indicators** | Animados con pulse effects y colores contextuales | Texto plano |
 | **Búsqueda** | Tiempo real con contador dinámico | N/A en su console |
+| **Navegación** | Breadcrumbs + detección de carpetas | Básica |
 | **Loading States** | Skeleton screens con shimmer effect | Spinners básicos |
 | **Responsive** | Mobile-first con transiciones adaptativas | Funcional |
 | **Accesibilidad** | prefers-reduced-motion + aria-live | Parcial |
